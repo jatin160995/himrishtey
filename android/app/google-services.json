@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "703625951116",
+    "firebase_url": "https://himrishtey-b6d9b-default-rtdb.firebaseio.com",
+    "project_id": "himrishtey-b6d9b",
+    "storage_bucket": "himrishtey-b6d9b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:703625951116:android:d9a03256df3c5ea08ec8a9",
+        "android_client_info": {
+          "package_name": "com.app.himrishtey"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "703625951116-4cf7hn2uaj0lvbs3cfbsc7eiiped6sum.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.app.himrishtey",
+            "certificate_hash": "c50ed7f9d26508ba4ba2e708596bd611950efa98"
+          }
+        },
+        {
+          "client_id": "703625951116-glga8m20rtlujgl2glu48kg835pic0le.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDo45uXMVjn2X6OQFuQIgl1NC-9--XKrQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "703625951116-glga8m20rtlujgl2glu48kg835pic0le.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "703625951116-mjs5kfgt79104ph67tlu861g5k0itfn5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.himrishteyApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

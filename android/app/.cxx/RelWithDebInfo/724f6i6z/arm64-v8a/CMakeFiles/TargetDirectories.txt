@@ -1,0 +1,2 @@
+/Users/jatinraja/Data/FlutterProjects/himrishtey/android/app/.cxx/RelWithDebInfo/724f6i6z/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/jatinraja/Data/FlutterProjects/himrishtey/android/app/.cxx/RelWithDebInfo/724f6i6z/arm64-v8a/CMakeFiles/rebuild_cache.dir

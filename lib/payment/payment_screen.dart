@@ -22,28 +22,123 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
+  late Razorpay _razorpay;
+  late double baseAmount;
+  late double gstAmount;
+  late double totalAmount;
+
+  static const double gstRate = 0.18; // 18% GST for matrimony/online services
+
   @override
   void initState() {
     super.initState();
-    Razorpay razorpay = Razorpay();
+
+    // Calculate GST
+    baseAmount = double.parse(widget.price);
+    gstAmount = baseAmount * gstRate;
+    totalAmount = baseAmount + gstAmount;
+
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
+
+    // Show tax breakdown dialog before opening Razorpay
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showTaxBreakdownAndPay();
+    });
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
+  }
+
+  /// Show tax breakdown to user before proceeding to payment
+  void _showTaxBreakdownAndPay() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Payment Summary"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _breakdownRow("Plan Amount", "₹${baseAmount.toStringAsFixed(2)}"),
+            _breakdownRow("GST (18%)", "+ ₹${gstAmount.toStringAsFixed(2)}"),
+            const Divider(thickness: 1),
+            _breakdownRow("Total Payable", "₹${totalAmount.toStringAsFixed(2)}",
+                bold: true),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context); // go back if user cancels
+            },
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _openRazorpay();
+            },
+            child: const Text("Proceed to Pay"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Open Razorpay with GST-inclusive total amount
+  void _openRazorpay() {
     var options = {
-      'key': 'rzp_live_SvapvIoK4xgEcS', // GST
-      //'key': 'rzp_live_rB5kEmwTkmjwBd', 2nd
-      //'key': 'rzp_test_z96mAzEUzvwEcP',
-      'amount': double.parse(widget.price) * 100,
-      //'name': 'Acme Corp.',
+      'key': 'rzp_live_SvapvIoK4xgEcS',
+      'amount': (totalAmount * 100).toInt(), // amount in paise (integer)
       'description': widget.description,
       'retry': {'enabled': true, 'max_count': 1},
       'send_sms_hash': true,
       'prefill': {'contact': widget.phone, 'email': widget.email},
       'external': {
         'wallets': ['paytm']
+      },
+      // Tax breakdown stored in notes for records/reconciliation
+      'notes': {
+        'base_amount': baseAmount.toStringAsFixed(2),
+        'gst_18_percent': gstAmount.toStringAsFixed(2),
+        'total_with_gst': totalAmount.toStringAsFixed(2),
       }
     };
-    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
-    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
-    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
-    razorpay.open(options);
+
+    _razorpay.open(options);
+  }
+
+  /// Row widget for breakdown display
+  Widget _breakdownRow(String label, String value, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              fontSize: bold ? 16 : 14,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              fontSize: bold ? 16 : 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -54,30 +149,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   void handlePaymentErrorResponse(PaymentFailureResponse response) {
-    /*
-    * PaymentFailureResponse contains three values:
-    * 1. Error Code
-    * 2. Error Description
-    * 3. Metadata
-    * */
     showAlertDialog(context, "Payment Failed",
         "Code: ${response.code}\nDescription: ${response.message}\nMetadata:${response.error.toString()}");
   }
 
   void handlePaymentSuccessResponse(PaymentSuccessResponse response) {
-    /*
-    * Payment Success Response contains three values:
-    * 1. Order ID
-    * 2. Payment ID
-    * 3. Signature
-    * */
     Navigator.pushReplacement(
         context,
         CupertinoPageRoute(
-            builder: (context) => PaymentSuccess(response, widget.price,
-                widget.name, widget.isWallet, widget.plan)));
-    // showAlertDialog(
-    //     context, "Payment Successful", "Payment ID: ${response.paymentId}");
+            builder: (context) => PaymentSuccess(
+                response,
+                totalAmount.toStringAsFixed(2), // total with GST
+                widget.name,
+                widget.isWallet,
+                widget.plan)));
   }
 
   void handleExternalWalletSelected(ExternalWalletResponse response) {
@@ -86,7 +171,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   void showAlertDialog(BuildContext context, String title, String message) {
-    // set up the buttons
     Widget continueButton = ElevatedButton(
       child: const Text("Continue"),
       onPressed: () {
@@ -94,7 +178,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
         Navigator.pop(context);
       },
     );
-    // set up the AlertDialog
     AlertDialog alert = AlertDialog(
       title: Text(title),
       content: Text(message),
@@ -102,7 +185,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
         continueButton,
       ],
     );
-    // show the dialog
     showDialog(
       context: context,
       builder: (BuildContext context) {

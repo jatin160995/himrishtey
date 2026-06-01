@@ -27,7 +27,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     super.initState();
     Razorpay razorpay = Razorpay();
     var options = {
-      'key': 'rzp_live_rB5kEmwTkmjwBd',
+      'key': 'rzp_live_SvapvIoK4xgEcS', // GST
+      //'key': 'rzp_live_rB5kEmwTkmjwBd', 2nd
       //'key': 'rzp_test_z96mAzEUzvwEcP',
       'amount': double.parse(widget.price) * 100,
       //'name': 'Acme Corp.',

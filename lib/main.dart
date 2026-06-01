@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_observer/Observable.dart';
 import 'package:flutter_observer/Observer.dart';
 import 'package:himrishtey/controllers/auth_controller.dart';
+import 'package:himrishtey/firebase/app_notifications.dart';
 import 'package:himrishtey/screens/auth/login.dart';
 import 'package:himrishtey/screens/dashboard.dart';
 import 'package:himrishtey/screens/membership/membership.dart';
@@ -19,7 +20,19 @@ import 'package:himrishtey/utils/variables/globals.dart' as globals;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+// ✅ Step 1: Initialize Firebase
+  await Firebase.initializeApp();
 
+  // ✅ Step 2: Register background handler BEFORE runApp
+  FirebaseMessaging.onBackgroundMessage(
+    AppNotificationHandler.firebaseMessagingBackgroundHandler,
+  );
+
+  // ✅ Step 3: Initialize local notifications
+  await AppNotificationHandler.initLocalNotifications();
+
+  // ✅ Step 4: Request permission
+  await AppNotificationHandler.requestPermission();
   runApp(MainScreen());
 }
 
@@ -70,6 +83,11 @@ class _MainScreenState extends State<MainScreen> with Observer {
     Observable.instance.addObserver(this);
     facebookAppEvents.setAdvertiserTracking(enabled: true);
     checkIfLogin();
+    //  Wire up all notification listeners
+    AppNotificationHandler.showMsgHandler();
+    AppNotificationHandler.getInitialMsg();
+    AppNotificationHandler.onMsgOpen();
+    AppNotificationHandler.getFcmToken();
 
     listener = InternetConnectionChecker().onStatusChange.listen((status) {
       switch (status) {

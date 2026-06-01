@@ -45,14 +45,43 @@ class AppNotificationHandler {
     });
   }
 
+  static Future<void> initLocalNotifications() async {
+    // ✅ Create the Android notification channel
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    // ✅ Initialize with settings
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/launcher_icon');
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  static Future<void> requestPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    print('Permission status: ${settings.authorizationStatus}');
+  }
+
   /// handle notification when app in fore ground..
   static void getInitialMsg() {
     FirebaseMessaging.instance
         .getInitialMessage()
         .then((RemoteMessage? message) {
-      print("recieved for $message");
-      print(message!.notification!.title.toString());
-      showMsg(message.notification!);
+      if (message != null && message.notification != null) {
+        // ✅ null check
+        print(message.notification!.title.toString());
+        showMsg(message.notification!);
+      }
     });
   }
 

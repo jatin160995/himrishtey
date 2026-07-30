@@ -3,13 +3,13 @@ import 'package:himrishtey/utils/variables/globals.dart' as globals;
 String domain_url = globals.isHimrishtey == 1
     ? "https://himrishtey.com/apis/"
     : globals.isHimrishtey == 2
-        ? "https://devbhoomirishtey.com/apis/"
-        : "https://dogririshtey.com/apis/";
+    ? "https://devbhoomirishtey.com/apis/"
+    : "https://dogririshtey.com/apis/";
 String domain_live_url = globals.isHimrishtey == 1
     ? "https://himrishtey.com/apis/"
     : globals.isHimrishtey == 2
-        ? "https://devbhoomirishtey.com/apis/"
-        : "https://dogririshtey.com/apis/";
+    ? "https://devbhoomirishtey.com/apis/"
+    : "https://dogririshtey.com/apis/";
 //End Points
 
 //User

@@ -209,35 +209,37 @@ class _ProfileForState extends State<ProfileFor> {
             ),
             Align(
               alignment: Alignment.bottomCenter,
-              child: Container(
-                color: selectedVal == -1 ? dividerColor : primaryColor,
-                width: double.infinity,
-                height: 60,
-                child: TextButton(
-                  onPressed: selectedVal == -1
-                      ? null
-                      : () {
-                          if (selectedVal == 2 || selectedVal == 4) {
-                            gender = true;
-                          } else if (selectedVal == 3 || selectedVal == 5) {
-                            gender = false;
-                          }
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => Signup(
-                                    values[selectedVal]['value'],
-                                    gender ? "Male" : "Female")),
-                          );
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(builder: (context) => SignUpTwo()),
-                          // );
-                        },
-                  child: Text(
-                    'Continue',
-                    style: TextStyle(
-                        color: white, fontSize: 16, fontFamily: "medium"),
+              child: SafeArea(
+                child: Container(
+                  color: selectedVal == -1 ? dividerColor : primaryColor,
+                  width: double.infinity,
+                  height: 60,
+                  child: TextButton(
+                    onPressed: selectedVal == -1
+                        ? null
+                        : () {
+                            if (selectedVal == 2 || selectedVal == 4) {
+                              gender = true;
+                            } else if (selectedVal == 3 || selectedVal == 5) {
+                              gender = false;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Signup(
+                                      values[selectedVal]['value'],
+                                      gender ? "Male" : "Female")),
+                            );
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(builder: (context) => SignUpTwo()),
+                            // );
+                          },
+                    child: Text(
+                      'Continue',
+                      style: TextStyle(
+                          color: white, fontSize: 16, fontFamily: "medium"),
+                    ),
                   ),
                 ),
               ),

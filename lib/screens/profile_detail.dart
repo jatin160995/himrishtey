@@ -1421,7 +1421,7 @@ class _ProfileDetailState extends State<ProfileDetail> {
                 profileDetail['cast'] +
                 " | " +
                 profileDetail['birth_place'] +
-                "",
+                " | ",
             style: TextStyle(color: textMedium(), fontSize: 14),
           ),
           SizedBox(

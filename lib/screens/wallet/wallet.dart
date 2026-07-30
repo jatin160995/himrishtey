@@ -350,6 +350,7 @@ class _WalletState extends State<Wallet> with Observer {
 
   Future<void> _showAddMoneyDialog() async {
     TextEditingController amountController = new TextEditingController();
+
     return showDialog<void>(
       context: context,
       barrierDismissible: true, // user must tap button!
@@ -376,6 +377,13 @@ class _WalletState extends State<Wallet> with Observer {
                 onPressed: () {
                   if (amountController.text.trim() == '') {
                     showToast("Please enter amount");
+                    return;
+                  }
+                  int enteredAmount = int.tryParse(amountController.text) ?? 0;
+                  if (enteredAmount < 50) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('The minimum amount must be 50.')),
+                    );
                     return;
                   }
                   getUserValues({

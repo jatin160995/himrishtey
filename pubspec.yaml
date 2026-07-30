@@ -50,7 +50,7 @@ dependencies:
   pinch_zoom: ^2.0.0
   image_picker: ^1.0.5
   share_plus: ^7.2.1
-  path_provider: ^2.0.3
+  path_provider: ^2.1.5
   syncfusion_flutter_sliders: ^24.2.4
   webview_flutter: 4.4.3
   url_launcher: ^6.3.0
@@ -62,8 +62,11 @@ dependencies:
   package_info_plus: ^8.0.2
   in_app_purchase: ^3.2.0
   facebook_app_events: 0.20.1
-  #image_cropper: ^8.1.0
+  image_cropper: ^9.1.0
   restart_app: ^1.2.1
+  flutter_image_compress: ^2.4.0
+  image: ^4.5.4
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
@@ -118,6 +121,7 @@ flutter:
   # see https://flutter.dev/custom-fonts/#from-packages
   assets:
     - assets/images/
+    - assets/watermark/
   fonts:
     - family: poppins
       fonts:

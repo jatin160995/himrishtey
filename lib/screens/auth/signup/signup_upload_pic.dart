@@ -171,7 +171,11 @@ class _SignupUploadPicState extends State<SignupUploadPic> {
 
   takePhoto() async {
     ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxHeight: 1200,
+      imageQuality: 90,
+    );
     if (image != null) {
       Navigator.push(
         context,
@@ -180,6 +184,5 @@ class _SignupUploadPicState extends State<SignupUploadPic> {
       );
     }
     print(image?.path);
-    // return image;
   }
 }

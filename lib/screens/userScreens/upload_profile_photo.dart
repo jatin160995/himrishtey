@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_observer/Observable.dart';
@@ -8,11 +9,13 @@ import 'package:himrishtey/controllers/user_controller.dart';
 import 'package:himrishtey/screens/auth/sigup_success.dart';
 import 'package:himrishtey/utils/common.dart';
 import 'package:himrishtey/utils/container_radius.dart';
+import 'package:himrishtey/utils/image_watermark.dart';
 import 'package:himrishtey/utils/variables/api_endpoints.dart';
 import 'package:himrishtey/utils/variables/globals.dart';
 import 'package:himrishtey/utils/variables/observer_variables.dart';
 import 'package:himrishtey/utils/variables/shared_prefrences.dart';
 import 'package:himrishtey/widgets/button_loader.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 
@@ -30,6 +33,69 @@ class _UploadProfilePhotoState extends State<UploadProfilePhoto> {
   DateTime? currentBackPressTime;
   bool canPopNow = false;
   int requiredSeconds = 2;
+
+  // Holds the cropped result. Null until the user finishes (or cancels)
+  // a crop, in which case the original picked image is shown/used instead.
+  File? croppedImage;
+  bool isCropping = false;
+
+  File get activeImageFile => croppedImage ?? File(widget.image.path);
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-launch the cropper the moment this screen opens.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openCropper(isInitial: true);
+    });
+  }
+
+  Future<void> _openCropper({bool isInitial = false}) async {
+    setState(() {
+      isCropping = true;
+    });
+
+    // Always crop from the ORIGINAL picked image (never from a previously
+    // cropped copy) so re-adjusting the crop never compounds quality loss.
+    final CroppedFile? result = await ImageCropper().cropImage(
+      sourcePath: widget.image.path,
+      maxWidth: 1080,
+      maxHeight: 1080,
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 50,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Adjust Photo',
+          toolbarColor: primaryColor,
+          toolbarWidgetColor: white,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          hideBottomControls: false,
+        ),
+        IOSUiSettings(
+          title: 'Adjust Photo',
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+          aspectRatioPickerButtonHidden: true,
+        ),
+      ],
+    );
+
+    if (result != null) {
+      setState(() {
+        croppedImage = File(result.path);
+        isCropping = false;
+      });
+    } else {
+      setState(() {
+        isCropping = false;
+      });
+      if (isInitial) {
+        showToast("You can adjust the crop anytime using the crop icon.");
+      }
+    }
+  }
 
   void onPopInvoked(bool didPop) {
     DateTime now = DateTime.now();
@@ -56,6 +122,8 @@ class _UploadProfilePhotoState extends State<UploadProfilePhoto> {
 
   @override
   Widget build(BuildContext context) {
+    final double avatarSize = MediaQuery.of(context).size.width * 0.6;
+
     return PopScope(
       canPop: canPopNow,
       onPopInvoked: onPopInvoked,
@@ -67,15 +135,11 @@ class _UploadProfilePhotoState extends State<UploadProfilePhoto> {
         bottomNavigationBar: Container(
           color: primaryColor,
           child: TextButton(
-            onPressed: () {
-              setState(() async {
-                uploadPhotoToServer();
-                // await uploadImageWithProgress((progress) {
-                //   print(
-                //       "Upload progress: ${(progress * 100).toStringAsFixed(2)}%");
-                // });
-              });
-            },
+            onPressed: (isLoading || isCropping)
+                ? null
+                : () {
+                    uploadPhotoToServer();
+                  },
             child: isLoading
                 ? ButtonLoader()
                 : Text(
@@ -93,20 +157,52 @@ class _UploadProfilePhotoState extends State<UploadProfilePhoto> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                decoration: borderRadius(
-                  white,
-                  MediaQuery.of(context).size.width * 0.3,
-                ),
-                clipBehavior: Clip.antiAlias,
-                margin: EdgeInsets.all(20),
-                // height: MediaQuery.of(context).size.height * 0.6,
-                child: Image.file(
-                  height: MediaQuery.of(context).size.width * 0.6,
-                  width: MediaQuery.of(context).size.width * 0.6,
-                  File(widget.image.path),
-                  fit: BoxFit.cover,
-                ),
+              Stack(
+                children: [
+                  Container(
+                    decoration: borderRadius(
+                      white,
+                      MediaQuery.of(context).size.width * 0.3,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    margin: EdgeInsets.all(20),
+                    child: Stack(
+                      children: [
+                        Image.file(
+                          activeImageFile,
+                          height: avatarSize,
+                          width: avatarSize,
+                          fit: BoxFit.cover,
+                        ),
+                        if (isCropping)
+                          Container(
+                            height: avatarSize,
+                            width: avatarSize,
+                            color: Colors.black26,
+                            child: Center(
+                              child: CircularProgressIndicator(color: white),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    right: 24,
+                    bottom: 24,
+                    child: GestureDetector(
+                      onTap: isCropping ? null : () => _openCropper(),
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: primaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: white, width: 2),
+                        ),
+                        child: Icon(Icons.crop, color: white, size: 18),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -116,11 +212,25 @@ class _UploadProfilePhotoState extends State<UploadProfilePhoto> {
   }
 
   convertTo64() async {
-    File fileData = File(widget.image.path);
-    List<int> imageBytes = await fileData.readAsBytes();
-    String base64Image = base64Encode(imageBytes);
+    final File fileData = activeImageFile;
+    final Uint8List imageBytes = await fileData.readAsBytes();
 
-    return base64Image;
+    final Uint8List watermarkedBytes = await addDiagonalTextWatermark(
+      imageBytes,
+      _watermarkText(),
+    );
+
+    return base64Encode(watermarkedBytes);
+  }
+
+  // Brand-aware text, matching the pattern already used in
+  // utils/common.dart (imageUrlPrefix()) and screens/auth/login.dart.
+  String _watermarkText() {
+    return isHimrishtey == 1
+        ? "HimRishtey"
+        : isHimrishtey == 2
+            ? "DevbhoomiRishtey"
+            : "Dogri Rishtey";
   }
 
   UserController userController = new UserController();
@@ -128,11 +238,8 @@ class _UploadProfilePhotoState extends State<UploadProfilePhoto> {
     loadingState(true);
     print("upload");
 
-    final base64Image = await convertTo64();
-    // print(await convertTo64());
     dynamic responseData =
         await userController.uploadProfilePic(await convertTo64());
-    // print(responseData);
 
     if (responseData['status']) {
       showSnackBar(context,
@@ -183,50 +290,6 @@ class _UploadProfilePhotoState extends State<UploadProfilePhoto> {
           "Username or password wrong. Please check you credentials and check again");
     }
   }
-
-  // Future<void> uploadImageWithProgress(Function(double) onProgress) async {
-  //   var user_id = await getString(key: userId);
-  //   final url = Uri.parse(upload_profile_pic); // Replace with your API endpoint
-  //   final headers = {
-  //     'Content-Type': 'application/x-www-form-urlencoded',
-  //   };
-  //   String image64 = await convertTo64();
-  //   final body = {
-  //     'user_id': user_id ?? "0",
-  //     'image': image64,
-  //   };
-
-  //   try {
-  //     final client = http.Client();
-  //     final request = http.Request("POST", url)
-  //       ..headers.addAll(headers)
-  //       ..bodyFields = body;
-
-  //     final streamedResponse = await client.send(request);
-
-  //     final totalBytes = streamedResponse.contentLength ?? 0;
-  //     double uploadedBytes = 0;
-
-  //     // Listen to the stream for progress
-  //     final responseBody = StringBuffer();
-  //     await for (var chunk in streamedResponse.stream) {
-  //       uploadedBytes += chunk.length;
-  //       onProgress(uploadedBytes / totalBytes);
-
-  //       // Collect the response body
-  //       responseBody.write(utf8.decode(chunk));
-  //     }
-
-  //     // Check the response status code
-  //     if (streamedResponse.statusCode == 200) {
-  //       print("Image uploaded successfully: ${responseBody.toString()}");
-  //     } else {
-  //       print("Failed to upload image: ${responseBody.toString()}");
-  //     }
-  //   } catch (e) {
-  //     print("Error occurred while uploading image: $e");
-  //   }
-  // }
 
   bool isLoading = false;
 
